@@ -1,0 +1,21 @@
+# Pliki binarne i kompilowane
+target/
+*.class
+
+# Pliki IDE
+.idea/
+*.iml
+*.log
+.vscode/
+*.swp
+
+# Pliki Maven
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db

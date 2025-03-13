@@ -44,7 +44,7 @@ public class RestApiTest {
     @Test
     public void testGetRequestWithLogging() {
         given()
-            .log().all() // Loguje całe żądanie (nagłówki, body, itp.)
+            .log().uri() // Loguje tylko URI
         .when()
             .get("/posts/1")
         .then()
@@ -57,7 +57,7 @@ public class RestApiTest {
         logger.info("Rozpoczynam test GET request");
 
         given()
-            .log().all()
+            .log().all() // Loguje całe żądanie (nagłówki, body, itp.)
         .when()
             .get("/posts/1")
         .then()

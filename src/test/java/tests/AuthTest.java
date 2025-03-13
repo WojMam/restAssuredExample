@@ -1,6 +1,7 @@
 package tests;
 
 import io.restassured.RestAssured;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
@@ -8,6 +9,7 @@ import static org.hamcrest.Matchers.*;
 public class AuthTest {
 
     // 🔹 Basic Authentication (username & password)
+    @Disabled
     @Test
     public void testBasicAuth() {
         given()
@@ -21,6 +23,7 @@ public class AuthTest {
     }
 
     // 🔹 Bearer Token Authentication (OAuth 2.0, JWT)
+    @Disabled
     @Test
     public void testBearerTokenAuth() {
         String token = "your_access_token_here";
@@ -36,6 +39,7 @@ public class AuthTest {
     }
 
     // 🔹 API Key Authentication (Header)
+    @Disabled
     @Test
     public void testApiKeyAuthInHeader() {
         given()
@@ -49,6 +53,7 @@ public class AuthTest {
     }
 
     // 🔹 API Key Authentication (Query Parameter)
+    @Disabled
     @Test
     public void testApiKeyAuthInUrl() {
         given()

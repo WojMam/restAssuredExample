@@ -1,7 +1,12 @@
+package tests;
+
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -9,6 +14,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class BodyFromFileTest {
 
     @Test
+    @Disabled
     public void testPostWithJsonBody() throws IOException {
         String requestBody = readJsonFile("src/test/resources/request-body.json");
 

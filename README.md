@@ -18,6 +18,7 @@ restassured-test/
 │── pom.xml
 │── .gitignore
 │── README.md
+│── LICENSE
 ```
 
 ## 🚀 Uruchamianie testów
@@ -44,6 +45,63 @@ Lub konkretnej metody testowej:
 
 ```bash
 mvn -Dtest=RestApiTest#testGetRequest test
+```
+
+## 🔐 Autoryzacja w testach
+
+Projekt obsługuje różne metody autoryzacji:
+
+### 🔹 Basic Authentication (username & password)
+
+```java
+given()
+    .auth().basic("username", "password")
+    .log().all()
+.when()
+    .get("/secured-endpoint")
+.then()
+    .log().body()
+    .statusCode(200);
+```
+
+### 🔹 Bearer Token Authentication (OAuth 2.0, JWT)
+
+```java
+String token = "your_access_token_here";
+given()
+    .header("Authorization", "Bearer " + token)
+    .log().all()
+.when()
+    .get("/protected-resource")
+.then()
+    .log().body()
+    .statusCode(200);
+```
+
+### 🔹 API Key Authentication (Header)
+
+```java
+given()
+    .header("x-api-key", "your_api_key_here")
+    .log().all()
+.when()
+    .get("/api-endpoint")
+.then()
+    .log().body()
+    .statusCode(200);
+```
+
+### 🔹 API Key Authentication (Query Parameter)
+
+```java
+given()
+    .queryParam("api_key", "your_api_key_here")
+    .log().all()
+.when()
+    .get("/api-endpoint")
+.then()
+    .log().body()
+    .statusCode(200);
 ```
 
 ## 🔧 Konfiguracja logowania

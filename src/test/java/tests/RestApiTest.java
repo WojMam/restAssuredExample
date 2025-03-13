@@ -37,4 +37,16 @@ public class RestApiTest {
             .body("body", equalTo("bar"))
             .body("userId", equalTo(1));
     }
+
+    @Test
+    public void testGetRequestWithLogging() {
+        given()
+            .log().all() // Loguje całe żądanie (nagłówki, body, itp.)
+        .when()
+            .get("/posts/1")
+        .then()
+            .log().body() // Loguje tylko body odpowiedzi
+            .statusCode(200);
+    }
+
 }

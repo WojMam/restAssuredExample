@@ -1,10 +1,10 @@
 # 📌 REST API Test Project with RestAssured
 
-## 📖 Description
+## 📖 Opis
 
-This project is designed for testing REST APIs using **RestAssured** library and **JUnit 5**.
+Ten projekt służy do testowania API REST za pomocą biblioteki **RestAssured** oraz **JUnit 5**.
 
-## 📂 Project Structure
+## 📂 Struktura projektu
 
 ```
 restassured-test/
@@ -14,43 +14,42 @@ restassured-test/
 │   │   └── resources/
 │   ├── test/
 │   │   ├── java/
-│   │   │   └── tests/ (API Tests)
+│   │   │   └── tests/ (Testy API)
 │── pom.xml
 │── .gitignore
 │── README.md
-│── README.pl.md
 │── LICENSE
 ```
 
-## 🚀 Running Tests
+## 🚀 Uruchamianie testów
 
-### 🔹 1️⃣ Navigate to project directory
+### 🔹 1️⃣ Przejdź do katalogu projektu
 
 ```bash
 cd restassured-test
 ```
 
-### 🔹 2️⃣ Run all tests
+### 🔹 2️⃣ Uruchom wszystkie testy
 
 ```bash
 mvn test
 ```
 
-### 🔹 3️⃣ Run specific test
+### 🔹 3️⃣ Uruchomienie konkretnego testu
 
 ```bash
 mvn -Dtest=RestApiTest test
 ```
 
-Or specific test method:
+Lub konkretnej metody testowej:
 
 ```bash
 mvn -Dtest=RestApiTest#testGetRequest test
 ```
 
-## 🔐 Authentication in Tests
+## 🔐 Autoryzacja w testach
 
-The project supports various authentication methods:
+Projekt obsługuje różne metody autoryzacji:
 
 ### 🔹 Basic Authentication (username & password)
 
@@ -105,55 +104,55 @@ given()
     .statusCode(200);
 ```
 
-## 🔧 Logging Configuration
+## 🔧 Konfiguracja logowania
 
-The project handles test logging through **RestAssured** and **SLF4J + Logback**.
+Projekt obsługuje logowanie testów poprzez **RestAssured** oraz **SLF4J + Logback**.
 
-- To log entire request and response in RestAssured:
+- Aby logować całe żądanie i odpowiedź w RestAssured, użyj:
 
 ```java
 given().log().all().when().get("/posts/1").then().log().body();
 ```
 
-- Logging with SLF4J:
+- Logowanie w SLF4J:
 
 ```java
 private static final Logger logger = LoggerFactory.getLogger(RestApiTest.class);
-logger.info("Starting test");
+logger.info("Rozpoczynam test");
 ```
 
-## 📁 Test Data Management
+## 📁 Zarządzanie danymi testowymi
 
-The project implements a file-based test data management system, allowing for better organization and maintenance of tests.
+Projekt implementuje system zarządzania danymi testowymi poprzez pliki, co pozwala na lepszą organizację i utrzymanie testów.
 
-### 🔹 Directory Structure
+### 🔹 Struktura katalogów
 
 ```
 src/test/
 ├── java/
 │   └── tests/
-│       ├── models/         # Model classes for test data
-│       ├── utils/          # Data handling utilities
+│       ├── models/         # Klasy modelowe dla danych testowych
+│       ├── utils/          # Narzędzia do obsługi danych
 │       └── FileBasedTest.java
 └── resources/
-    └── testdata/          # Test data files
+    └── testdata/          # Pliki z danymi testowymi
         ├── post_data.json
         └── raw_content.txt
 ```
 
-### 🔹 Example Usage
+### 🔹 Przykład użycia danych z plików
 
-1. **Loading JSON Data**:
+1. **Ładowanie danych JSON**:
 ```java
 PostData postData = TestDataLoader.loadJsonData("post_data.json", PostData.class);
 ```
 
-2. **Loading Raw Data**:
+2. **Ładowanie surowych danych**:
 ```java
 String content = TestDataLoader.loadFileContent("raw_content.txt");
 ```
 
-3. **Example Test with File Data**:
+3. **Przykład testu z danymi z pliku**:
 ```java
 @Test
 public void testPostWithJsonData() {
@@ -171,23 +170,23 @@ public void testPostWithJsonData() {
 }
 ```
 
-### 🔹 Benefits of This Approach
+### 🔹 Korzyści z tego podejścia
 
-- **Data-Code Separation**: Test data is stored separately from test code
-- **Easy Maintenance**: Quick data updates without code modifications
-- **Reusability**: Same data can be used across multiple tests
-- **Flexibility**: Support for different file formats and data types
-- **Type Safety**: JSON data is properly typed through model classes
+- **Separacja danych od kodu**: Dane testowe są przechowywane osobno od kodu testowego
+- **Łatwość utrzymania**: Możliwość szybkiej aktualizacji danych bez modyfikacji kodu
+- **Wielokrotne użycie**: Te same dane mogą być wykorzystane w różnych testach
+- **Elastyczność**: Obsługa różnych formatów plików i typów danych
+- **Typebezpieczeństwo**: Dane JSON są prawidłowo typowane przez klasy modelowe
 
-## 📦 Dependencies (Maven)
+## 📦 Zależności (Maven)
 
-The project uses the following libraries:
+Projekt wykorzystuje następujące biblioteki:
 
-- **RestAssured** – for API testing
-- **JUnit 5** – testing framework
-- **SLF4J + Logback** – for logging
+- **RestAssured** – do testowania API
+- **JUnit 5** – framework testowy
+- **SLF4J + Logback** – do logowania
 
-Add to `pom.xml`:
+Dodaj do `pom.xml`:
 
 ```xml
 <dependency>
@@ -198,12 +197,6 @@ Add to `pom.xml`:
 </dependency>
 ```
 
-## 🌐 Language Versions
+## 📜 Licencja
 
-This README is available in multiple languages:
-- [English](README.md)
-- [Polski](README.pl.md)
-
-## 📜 License
-
-The project is available under the MIT License. You can freely develop and modify it. 🚀
+Projekt dostępny na licencji MIT. Możesz dowolnie go rozwijać i modyfikować. 🚀

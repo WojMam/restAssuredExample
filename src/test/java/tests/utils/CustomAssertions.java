@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import org.hamcrest.Matcher;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
 public class CustomAssertions {
     
@@ -21,6 +22,10 @@ public class CustomAssertions {
 
     public static void assertJsonSchema(Response response, String schemaPath) {
         response.then().body(matchesJsonSchemaInClasspath(schemaPath));
+    }
+
+    public static void assertArraySize(Response response, String jsonPath, Matcher<?> sizeMatcher) {
+        response.then().body(jsonPath + ".size()", sizeMatcher);
     }
 
     public static void assertArraySize(Response response, String jsonPath, int expectedSize) {

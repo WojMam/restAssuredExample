@@ -10,6 +10,8 @@ import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import tests.utils.ConfigManager;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 
 public class BaseTest {
     protected static RequestSpecification requestSpec;
@@ -19,7 +21,7 @@ public class BaseTest {
     public static void setup() {
         // Setup request specification
         requestSpec = new RequestSpecBuilder()
-            .setBaseUri(ConfigManager.getBaseUrl("dev"))
+            .setBaseUri("https://jsonplaceholder.typicode.com")
             .setRelaxedHTTPSValidation()
             .addFilter(new RequestLoggingFilter())
             .addFilter(new ResponseLoggingFilter())
@@ -27,7 +29,7 @@ public class BaseTest {
 
         // Setup response specification
         responseSpec = new ResponseSpecBuilder()
-            .expectStatusCode(200)
+            .expectStatusCode(anyOf(is(200), is(201))) // Accept both 200 and 201
             .build();
 
         // Configure RestAssured

@@ -2,7 +2,7 @@
 
 ## 📖 Opis
 
-Ten projekt służy do testowania API REST za pomocą biblioteki **RestAssured** oraz **JUnit 5**.
+Ten projekt służy do testowania API REST za pomocą biblioteki **RestAssured** oraz **JUnit 5**. Wykorzystuje API JSONPlaceholder jako endpoint testowy.
 
 ## 📂 Struktura projektu
 
@@ -15,9 +15,13 @@ restassured-test/
 │   ├── test/
 │   │   ├── java/
 │   │   │   └── tests/ (Testy API)
+│   │   └── resources/
+│   │       ├── testdata/ (Pliki z danymi testowymi)
+│   │       └── schemas/ (Schematy JSON)
 │── pom.xml
 │── .gitignore
 │── README.md
+│── README.pl.md
 │── LICENSE
 ```
 
@@ -49,59 +53,63 @@ mvn -Dtest=RestApiTest#testGetRequest test
 
 ## 🔐 Autoryzacja w testach
 
-Projekt obsługuje różne metody autoryzacji:
+Projekt demonstruje różne metody autoryzacji wykorzystując API JSONPlaceholder. Należy zaznaczyć, że JSONPlaceholder nie waliduje faktycznie autoryzacji, więc używamy fikcyjnych danych uwierzytelniających w celach demonstracyjnych.
 
 ### 🔹 Basic Authentication (username & password)
 
 ```java
 given()
-    .auth().basic("username", "password")
+    .auth().basic("user", "pass")  // Fikcyjne dane uwierzytelniające
     .log().all()
 .when()
-    .get("/secured-endpoint")
+    .get("/posts/1")
 .then()
     .log().body()
-    .statusCode(200);
+    .statusCode(200)
+    .body("id", equalTo(1));
 ```
 
 ### 🔹 Bearer Token Authentication (OAuth 2.0, JWT)
 
 ```java
-String token = "your_access_token_here";
+String token = "dummy_token";  // Fikcyjny token
 given()
     .header("Authorization", "Bearer " + token)
     .log().all()
 .when()
-    .get("/protected-resource")
+    .get("/posts/2")
 .then()
     .log().body()
-    .statusCode(200);
+    .statusCode(200)
+    .body("id", equalTo(2));
 ```
 
 ### 🔹 API Key Authentication (Header)
 
 ```java
 given()
-    .header("x-api-key", "your_api_key_here")
+    .header("x-api-key", "dummy_key")  // Fikcyjny klucz API
     .log().all()
 .when()
-    .get("/api-endpoint")
+    .get("/posts/3")
 .then()
     .log().body()
-    .statusCode(200);
+    .statusCode(200)
+    .body("id", equalTo(3));
 ```
 
 ### 🔹 API Key Authentication (Query Parameter)
 
 ```java
 given()
-    .queryParam("api_key", "your_api_key_here")
+    .queryParam("api_key", "dummy_key")  // Fikcyjny klucz API
     .log().all()
 .when()
-    .get("/api-endpoint")
+    .get("/posts/4")
 .then()
     .log().body()
-    .statusCode(200);
+    .statusCode(200)
+    .body("id", equalTo(4));
 ```
 
 ## 🔧 Konfiguracja logowania
@@ -123,17 +131,6 @@ logger.info("Rozpoczynam test");
 
 ## ⚙️ Zaawansowane funkcje
 
-### 🔹 Konfiguracja środowisk
-
-Projekt obsługuje wiele środowisk poprzez system konfiguracji:
-
-```properties
-# config.properties
-base.url.dev=https://dev-api.example.com
-base.url.staging=https://staging-api.example.com
-base.url.prod=https://api.example.com
-```
-
 ### 🔹 Bazowa klasa testowa
 
 Wspólna konfiguracja testów poprzez klasę `BaseTest`:
@@ -152,9 +149,9 @@ public class AdvancedApiTest extends BaseTest {
 Wielokrotnie używane asercje do typowych walidacji:
 
 ```java
-CustomAssertions.assertResponseTime(response, 2000);
+CustomAssertions.assertResponseTime(response, 5000);  // 5 sekund timeout dla zewnętrznego API
 CustomAssertions.assertContentType(response, "application/json");
-CustomAssertions.assertJsonSchema(response, "schemas/post_schema.json");
+CustomAssertions.assertArraySize(response, "$", greaterThan(0));
 ```
 
 ### 🔹 Walidacja schematu JSON
@@ -181,7 +178,7 @@ Wspólne konfiguracje żądań i odpowiedzi:
 
 ```java
 RequestSpecification requestSpec = new RequestSpecBuilder()
-    .setBaseUri(ConfigManager.getBaseUrl("dev"))
+    .setBaseUri("https://jsonplaceholder.typicode.com")
     .setRelaxedHTTPSValidation()
     .addFilter(new RequestLoggingFilter())
     .build();
@@ -232,7 +229,10 @@ public void testPostWithJsonData() {
 
     response.then()
         .statusCode(201)
-        .body("title", equalTo(postData.getTitle()));
+        .body("title", equalTo(postData.getTitle()))
+        .body("body", equalTo(postData.getBody()))
+        .body("userId", equalTo(postData.getUserId()))
+        .body("id", notNullValue());
 }
 ```
 
@@ -248,21 +248,48 @@ public void testPostWithJsonData() {
 
 Projekt wykorzystuje następujące biblioteki:
 
-- **RestAssured** – do testowania API
-- **JUnit 5** – framework testowy
-- **SLF4J + Logback** – do logowania
-
-Dodaj do `pom.xml`:
-
 ```xml
-<dependency>
-    <groupId>io.rest-assured</groupId>
-    <artifactId>rest-assured</artifactId>
-    <version>5.3.0</version>
-    <scope>test</scope>
-</dependency>
+<dependencies>
+    <!-- RestAssured -->
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <version>5.3.0</version>
+        <scope>test</scope>
+    </dependency>
+    
+    <!-- JUnit 5 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.9.2</version>
+        <scope>test</scope>
+    </dependency>
+    
+    <!-- JSON Schema Validator -->
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>5.3.0</version>
+        <scope>test</scope>
+    </dependency>
+    
+    <!-- Jackson for JSON -->
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.15.2</version>
+    </dependency>
+    
+    <!-- SLF4J + Logback -->
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.4.7</version>
+    </dependency>
+</dependencies>
 ```
 
-## 📜 Licencja
+## 📝 Licencja
 
-Projekt dostępny na licencji MIT. Możesz dowolnie go rozwijać i modyfikować. 🚀
+Ten projekt jest dostępny na licencji MIT - szczegóły znajdują się w pliku [LICENSE](LICENSE).

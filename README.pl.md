@@ -293,3 +293,23 @@ Projekt wykorzystuje następujące biblioteki:
 ## 📝 Licencja
 
 Ten projekt jest dostępny na licencji MIT - szczegóły znajdują się w pliku [LICENSE](LICENSE).
+
+## 🌿 Strategia rozgałęzień
+
+Ten projekt stosuje strategię rozgałęzień, która pozwala na stabilny i eksperymentalny rozwój:
+
+- **master** - Główna gałąź deweloperska, gdzie implementowane są nowe funkcje i ulepszenia
+- **Basic** - Stabilna gałąź zawierająca podstawową implementację frameworka testowania API REST
+
+### 🔹 Praca z gałęziami
+
+Aby przełączyć się między wersjami:
+```bash
+# Przełącz na stabilną wersję Basic
+git checkout Basic
+
+# Wróć do wersji deweloperskiej
+git checkout master
+```
+
+Gałąź `Basic` służy jako punkt odniesienia dla podstawowej implementacji, podczas gdy gałąź `master` stale się rozwija z nowymi funkcjami i ulepszeniami.

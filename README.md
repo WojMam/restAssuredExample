@@ -299,3 +299,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 This README is available in multiple languages:
 - [English](README.md)
 - [Polski](README.pl.md)
+
+## 🌿 Branching Strategy
+
+This project follows a branching strategy that allows for both stable and experimental development:
+
+- **master** - The main development branch where new features and improvements are implemented
+- **Basic** - A stable branch containing the basic implementation of the REST API testing framework
+
+### 🔹 Working with Branches
+
+To switch between versions:
+```bash
+# Switch to the stable Basic version
+git checkout Basic
+
+# Switch back to the development version
+git checkout master
+```
+
+The `Basic` branch serves as a reference point for the basic implementation, while the `master` branch continues to evolve with new features and improvements.

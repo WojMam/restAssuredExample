@@ -122,6 +122,72 @@ private static final Logger logger = LoggerFactory.getLogger(RestApiTest.class);
 logger.info("Starting test");
 ```
 
+## ⚙️ Advanced Features
+
+### 🔹 Environment Configuration
+
+The project supports multiple environments through a configuration system:
+
+```properties
+# config.properties
+base.url.dev=https://dev-api.example.com
+base.url.staging=https://staging-api.example.com
+base.url.prod=https://api.example.com
+```
+
+### 🔹 Base Test Class
+
+Common test setup and teardown through `BaseTest` class:
+
+```java
+public class AdvancedApiTest extends BaseTest {
+    @Test
+    public void testWithCommonSetup() {
+        // Test code here
+    }
+}
+```
+
+### 🔹 Custom Assertions
+
+Reusable assertions for common validations:
+
+```java
+CustomAssertions.assertResponseTime(response, 2000);
+CustomAssertions.assertContentType(response, "application/json");
+CustomAssertions.assertJsonSchema(response, "schemas/post_schema.json");
+```
+
+### 🔹 JSON Schema Validation
+
+Validate response structure against JSON schemas:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["id", "title", "body", "userId"],
+  "properties": {
+    "id": { "type": "integer" },
+    "title": { "type": "string" },
+    "body": { "type": "string" },
+    "userId": { "type": "integer" }
+  }
+}
+```
+
+### 🔹 Request/Response Specifications
+
+Common request and response configurations:
+
+```java
+RequestSpecification requestSpec = new RequestSpecBuilder()
+    .setBaseUri(ConfigManager.getBaseUrl("dev"))
+    .setRelaxedHTTPSValidation()
+    .addFilter(new RequestLoggingFilter())
+    .build();
+```
+
 ## 📁 Test Data Management
 
 The project implements a file-based test data management system, allowing for better organization and maintenance of tests.

@@ -121,6 +121,72 @@ private static final Logger logger = LoggerFactory.getLogger(RestApiTest.class);
 logger.info("Rozpoczynam test");
 ```
 
+## ⚙️ Zaawansowane funkcje
+
+### 🔹 Konfiguracja środowisk
+
+Projekt obsługuje wiele środowisk poprzez system konfiguracji:
+
+```properties
+# config.properties
+base.url.dev=https://dev-api.example.com
+base.url.staging=https://staging-api.example.com
+base.url.prod=https://api.example.com
+```
+
+### 🔹 Bazowa klasa testowa
+
+Wspólna konfiguracja testów poprzez klasę `BaseTest`:
+
+```java
+public class AdvancedApiTest extends BaseTest {
+    @Test
+    public void testWithCommonSetup() {
+        // Kod testu tutaj
+    }
+}
+```
+
+### 🔹 Własne asercje
+
+Wielokrotnie używane asercje do typowych walidacji:
+
+```java
+CustomAssertions.assertResponseTime(response, 2000);
+CustomAssertions.assertContentType(response, "application/json");
+CustomAssertions.assertJsonSchema(response, "schemas/post_schema.json");
+```
+
+### 🔹 Walidacja schematu JSON
+
+Walidacja struktury odpowiedzi względem schematu JSON:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["id", "title", "body", "userId"],
+  "properties": {
+    "id": { "type": "integer" },
+    "title": { "type": "string" },
+    "body": { "type": "string" },
+    "userId": { "type": "integer" }
+  }
+}
+```
+
+### 🔹 Specyfikacje żądań i odpowiedzi
+
+Wspólne konfiguracje żądań i odpowiedzi:
+
+```java
+RequestSpecification requestSpec = new RequestSpecBuilder()
+    .setBaseUri(ConfigManager.getBaseUrl("dev"))
+    .setRelaxedHTTPSValidation()
+    .addFilter(new RequestLoggingFilter())
+    .build();
+```
+
 ## 📁 Zarządzanie danymi testowymi
 
 Projekt implementuje system zarządzania danymi testowymi poprzez pliki, co pozwala na lepszą organizację i utrzymanie testów.

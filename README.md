@@ -121,6 +121,63 @@ private static final Logger logger = LoggerFactory.getLogger(RestApiTest.class);
 logger.info("Rozpoczynam test");
 ```
 
+## 📁 Zarządzanie danymi testowymi
+
+Projekt implementuje system zarządzania danymi testowymi poprzez pliki, co pozwala na lepszą organizację i utrzymanie testów.
+
+### 🔹 Struktura katalogów
+
+```
+src/test/
+├── java/
+│   └── tests/
+│       ├── models/         # Klasy modelowe dla danych testowych
+│       ├── utils/          # Narzędzia do obsługi danych
+│       └── FileBasedTest.java
+└── resources/
+    └── testdata/          # Pliki z danymi testowymi
+        ├── post_data.json
+        └── raw_content.txt
+```
+
+### 🔹 Przykład użycia danych z plików
+
+1. **Ładowanie danych JSON**:
+```java
+PostData postData = TestDataLoader.loadJsonData("post_data.json", PostData.class);
+```
+
+2. **Ładowanie surowych danych**:
+```java
+String content = TestDataLoader.loadFileContent("raw_content.txt");
+```
+
+3. **Przykład testu z danymi z pliku**:
+```java
+@Test
+public void testPostWithJsonData() {
+    PostData postData = TestDataLoader.loadJsonData("post_data.json", PostData.class);
+    
+    Response response = given()
+        .header("Content-Type", "application/json")
+        .body(postData)
+        .when()
+        .post("/posts");
+
+    response.then()
+        .statusCode(201)
+        .body("title", equalTo(postData.getTitle()));
+}
+```
+
+### 🔹 Korzyści z tego podejścia
+
+- **Separacja danych od kodu**: Dane testowe są przechowywane osobno od kodu testowego
+- **Łatwość utrzymania**: Możliwość szybkiej aktualizacji danych bez modyfikacji kodu
+- **Wielokrotne użycie**: Te same dane mogą być wykorzystane w różnych testach
+- **Elastyczność**: Obsługa różnych formatów plików i typów danych
+- **Typebezpieczeństwo**: Dane JSON są prawidłowo typowane przez klasy modelowe
+
 ## 📦 Zależności (Maven)
 
 Projekt wykorzystuje następujące biblioteki:

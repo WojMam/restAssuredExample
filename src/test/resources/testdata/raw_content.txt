@@ -1,0 +1,4 @@
+This is a raw text content file
+It can contain any type of text content
+Useful for testing different content types
+or storing test data in non-JSON format 

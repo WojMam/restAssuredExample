@@ -1,11 +1,16 @@
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+package tests;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
 
 public class RestApiTest {
     private static final Logger logger = LoggerFactory.getLogger(RestApiTest.class);

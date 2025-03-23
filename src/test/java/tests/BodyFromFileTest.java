@@ -1,14 +1,17 @@
 package tests;
 
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import org.junit.jupiter.api.Test;
+
+import io.restassured.http.ContentType;
 
 /**
  * Body From File Test Suite

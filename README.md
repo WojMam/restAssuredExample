@@ -2,7 +2,14 @@
 
 ## 📖 Description
 
-This project is designed for testing REST APIs using **RestAssured** library and **JUnit 5**. It uses the JSONPlaceholder API as a test endpoint.
+This project is designed for testing REST APIs using **RestAssured** library and **JUnit 5**. It uses the JSONPlaceholder API as a test endpoint and implements a **Service/Client pattern** for multi-API testing.
+
+### 🆕 Latest Updates
+
+- **Service/Client Pattern**: Support for testing multiple APIs in a single test
+- **Multi-Service Configuration**: Configure different services with separate base URIs
+- **API Clients**: Pre-configured clients for JSONPlaceholder, User, Payment, and Notification APIs
+- **Conditional Testing**: Graceful handling of optional services
 
 ## 📂 Project Structure
 
@@ -12,16 +19,42 @@ restassured-test/
 │   ├── main/
 │   │   ├── java/
 │   │   └── resources/
+│   │       └── logback.xml
 │   ├── test/
 │   │   ├── java/
-│   │   │   └── tests/ (API Tests)
+│   │   │   └── tests/
+│   │   │       ├── clients/               # NEW: API Client Classes
+│   │   │       │   ├── BaseApiClient.java
+│   │   │       │   ├── JsonPlaceholderClient.java
+│   │   │       │   ├── UserApiClient.java
+│   │   │       │   ├── PaymentApiClient.java
+│   │   │       │   ├── NotificationApiClient.java
+│   │   │       │   └── ClientFactory.java
+│   │   │       ├── models/               # Data Models
+│   │   │       │   └── PostData.java
+│   │   │       ├── utils/                # Utility Classes
+│   │   │       │   ├── ConfigManager.java
+│   │   │       │   ├── CustomAssertions.java
+│   │   │       │   └── TestDataLoader.java
+│   │   │       ├── BaseTest.java         # Base Test Class
+│   │   │       ├── MultiApiTest.java     # NEW: Multi-API Testing
+│   │   │       ├── RestApiTest.java      # Basic API Tests
+│   │   │       ├── AuthTest.java         # Authentication Tests
+│   │   │       ├── AdvancedApiTest.java  # Advanced Features
+│   │   │       ├── FileBasedTest.java    # File-based Testing
+│   │   │       └── BodyFromFileTest.java # Body from File Tests
 │   │   └── resources/
-│   │       ├── testdata/ (Test data files)
-│   │       └── schemas/ (JSON schemas)
+│   │       ├── config.properties         # Multi-Service Configuration
+│   │       ├── testdata/                 # Test Data Files
+│   │       │   ├── post_data.json
+│   │       │   └── raw_content.txt
+│   │       └── schemas/                  # JSON Schemas
+│   │           └── post_schema.json
 │── pom.xml
 │── .gitignore
 │── README.md
 │── README.pl.md
+│── SERVICE_CLIENT_PATTERN.md             # NEW: Implementation Guide
 │── LICENSE
 ```
 
@@ -49,6 +82,18 @@ Or specific test method:
 
 ```bash
 mvn -Dtest=RestApiTest#testGetRequest test
+```
+
+### 🔹 4️⃣ Run multi-API tests
+
+```bash
+mvn -Dtest=MultiApiTest test
+```
+
+Or specific multi-API test method:
+
+```bash
+mvn -Dtest=MultiApiTest#testMultiApiWorkflow test
 ```
 
 ## 🔐 Authentication in Tests
@@ -133,13 +178,20 @@ logger.info("Starting test");
 
 ### 🔹 Base Test Class
 
-Common test setup and teardown through `BaseTest` class:
+Common test setup and teardown through `BaseTest` class with API clients:
 
 ```java
 public class AdvancedApiTest extends BaseTest {
     @Test
     public void testWithCommonSetup() {
-        // Test code here
+        // Use pre-configured API clients
+        Response response = jsonPlaceholderClient.getPost(1);
+        response.then().statusCode(200);
+
+        // Use conditional clients
+        if (userApiClient != null) {
+            Response login = userApiClient.login("user", "pass");
+        }
     }
 }
 ```
@@ -160,29 +212,202 @@ Validate response structure against JSON schemas:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": ["id", "title", "body", "userId"],
-  "properties": {
-    "id": { "type": "integer" },
-    "title": { "type": "string" },
-    "body": { "type": "string" },
-    "userId": { "type": "integer" }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"required": ["id", "title", "body", "userId"],
+	"properties": {
+		"id": { "type": "integer" },
+		"title": { "type": "string" },
+		"body": { "type": "string" },
+		"userId": { "type": "integer" }
+	}
 }
 ```
 
 ### 🔹 Request/Response Specifications
 
-Common request and response configurations:
+Common request and response configurations are now handled per client:
 
 ```java
-RequestSpecification requestSpec = new RequestSpecBuilder()
-    .setBaseUri("https://jsonplaceholder.typicode.com")
-    .setRelaxedHTTPSValidation()
-    .addFilter(new RequestLoggingFilter())
-    .build();
+// Each client has its own request/response specifications
+// Configured automatically based on service configuration
+JsonPlaceholderClient client = ClientFactory.getJsonPlaceholderClient();
+
+// Custom request specifications when needed
+Response response = client.customRequest()
+    .header("Custom-Header", "value")
+    .queryParam("param", "value")
+    .get("/custom-endpoint");
 ```
+
+## 🏗️ Service/Client Pattern (NEW)
+
+The project now implements a **Service/Client pattern** for testing multiple APIs with different base URIs in a single test. This solves the limitation of having only one baseUri per test class.
+
+### 🎯 Problem Solved
+
+**Before**: Limited to one API per test class
+
+```java
+@BeforeAll
+public static void setup() {
+    RestAssured.baseURI = "https://jsonplaceholder.typicode.com"; // Only one API
+}
+```
+
+**After**: Multiple APIs in a single test
+
+```java
+@Test
+public void testMultiApiWorkflow() {
+    // JSONPlaceholder API
+    Response user = jsonPlaceholderClient.getUser(1);
+
+    // User API
+    Response login = userApiClient.login("testuser", "testpass");
+
+    // Payment API
+    Response payment = paymentApiClient.processPayment(paymentData);
+
+    // Notification API
+    Response notification = notificationApiClient.sendNotification(notificationData);
+}
+```
+
+### 🔧 Available API Clients
+
+The project provides pre-configured clients for different services:
+
+- **JsonPlaceholderClient**: JSONPlaceholder API operations (posts, users, comments, todos)
+- **UserApiClient**: User management and authentication
+- **PaymentApiClient**: Payment processing and transaction management
+- **NotificationApiClient**: Notification management and templates
+
+### 📋 Multi-Service Configuration
+
+Configure multiple services in `config.properties`:
+
+```properties
+# Service-specific configurations
+service.jsonplaceholder.baseurl=https://jsonplaceholder.typicode.com
+service.jsonplaceholder.timeout=10000
+
+service.user.baseurl=https://user-api.example.com
+service.user.auth.token=user-service-token
+service.user.timeout=8000
+
+service.payment.baseurl=https://payment-api.example.com
+service.payment.auth.token=payment-service-token
+service.payment.timeout=15000
+
+service.notification.baseurl=https://notification-api.example.com
+service.notification.auth.token=notification-service-token
+service.notification.timeout=5000
+```
+
+### 🚀 Usage Examples
+
+#### Basic Usage
+
+```java
+public class MyTest extends BaseTest {
+
+    @Test
+    public void testJsonPlaceholder() {
+        Response response = jsonPlaceholderClient.getPost(1);
+        response.then().statusCode(200);
+    }
+
+    @Test
+    public void testUserManagement() {
+        Response response = userApiClient.login("testuser", "testpass");
+        // Handle response...
+    }
+}
+```
+
+#### Multi-API Workflow
+
+```java
+@Test
+public void testCompleteWorkflow() {
+    // Step 1: Get user data
+    Response user = jsonPlaceholderClient.getUser(1);
+
+    // Step 2: Create content
+    PostData postData = new PostData("Title", "Body", 1);
+    Response post = jsonPlaceholderClient.createPost(postData);
+
+    // Step 3: Process payment (if available)
+    if (paymentApiClient != null) {
+        Response payment = paymentApiClient.processPayment(paymentData);
+    }
+
+    // Step 4: Send notification (if available)
+    if (notificationApiClient != null) {
+        Response notification = notificationApiClient.sendNotification(notificationData);
+    }
+}
+```
+
+#### Conditional Testing
+
+```java
+@Test
+public void testWithServiceAvailability() {
+    // Always test main API
+    Response response = jsonPlaceholderClient.getPost(1);
+
+    // Conditionally test other services
+    if (isServiceAvailable("payment")) {
+        Response payment = paymentApiClient.getUserPayments(1);
+    }
+
+    if (isServiceAvailable("notification")) {
+        Response notifications = notificationApiClient.getUserNotifications(1);
+    }
+}
+```
+
+### 🎨 Client-Specific Methods
+
+Each client provides domain-specific methods:
+
+```java
+// JsonPlaceholderClient
+jsonPlaceholderClient.getAllPosts()
+jsonPlaceholderClient.getPost(id)
+jsonPlaceholderClient.createPost(postData)
+jsonPlaceholderClient.getUserPosts(userId)
+
+// UserApiClient
+userApiClient.login(username, password)
+userApiClient.getProfile()
+userApiClient.updateProfile(profileData)
+
+// PaymentApiClient
+paymentApiClient.processPayment(paymentData)
+paymentApiClient.getPayment(paymentId)
+paymentApiClient.getUserPayments(userId)
+
+// NotificationApiClient
+notificationApiClient.sendNotification(notificationData)
+notificationApiClient.getUserNotifications(userId)
+notificationApiClient.markAsRead(notificationId)
+```
+
+### 💡 Benefits
+
+- **Multi-API Testing**: Test interactions between different services
+- **Separation of Concerns**: Each client handles its own API specifics
+- **Reusability**: Client instances can be reused across tests
+- **Type Safety**: Strongly typed client methods with IDE support
+- **Flexible Configuration**: Environment-specific service configurations
+- **Automatic Authentication**: Token injection per service
+
+### 📖 Documentation
+
+For complete implementation details, see [SERVICE_CLIENT_PATTERN.md](SERVICE_CLIENT_PATTERN.md)
 
 ## 📁 Test Data Management
 
@@ -206,26 +431,26 @@ src/test/
 ### 🔹 Example Usage
 
 1. **Loading JSON Data**:
+
 ```java
 PostData postData = TestDataLoader.loadJsonData("post_data.json", PostData.class);
 ```
 
 2. **Loading Raw Data**:
+
 ```java
 String content = TestDataLoader.loadFileContent("raw_content.txt");
 ```
 
 3. **Example Test with File Data**:
+
 ```java
 @Test
 public void testPostWithJsonData() {
     PostData postData = TestDataLoader.loadJsonData("post_data.json", PostData.class);
-    
-    Response response = given()
-        .header("Content-Type", "application/json")
-        .body(postData)
-        .when()
-        .post("/posts");
+
+    // Using the new client pattern
+    Response response = jsonPlaceholderClient.createPost(postData);
 
     response.then()
         .statusCode(201)
@@ -257,7 +482,7 @@ The project uses the following libraries:
         <version>5.3.0</version>
         <scope>test</scope>
     </dependency>
-    
+
     <!-- JUnit 5 -->
     <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -265,7 +490,7 @@ The project uses the following libraries:
         <version>5.9.2</version>
         <scope>test</scope>
     </dependency>
-    
+
     <!-- JSON Schema Validator -->
     <dependency>
         <groupId>io.rest-assured</groupId>
@@ -273,14 +498,14 @@ The project uses the following libraries:
         <version>5.3.0</version>
         <scope>test</scope>
     </dependency>
-    
+
     <!-- Jackson for JSON -->
     <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
         <version>2.15.2</version>
     </dependency>
-    
+
     <!-- SLF4J + Logback -->
     <dependency>
         <groupId>ch.qos.logback</groupId>
@@ -297,6 +522,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🌐 Language Versions
 
 This README is available in multiple languages:
+
 - [English](README.md)
 - [Polski](README.pl.md)
 
@@ -310,6 +536,7 @@ This project follows a branching strategy that allows for both stable and experi
 ### 🔹 Working with Branches
 
 To switch between versions:
+
 ```bash
 # Switch to the stable Basic version
 git checkout Basic

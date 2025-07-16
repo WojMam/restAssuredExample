@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>TokenFetcher w core - Dokumentacja</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 2em; }
+        h1, h2, h3 { color: #2c3e50; }
+        code, pre { background: #f4f4f4; padding: 0.5em; display: block; overflow-x: auto; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+
+<h1>🔐 TokenFetcher w core - Dokumentacja</h1>
+
+<h2>📊 Cel</h2>
+<p>Klasa <code>TokenFetcher</code> służy do centralnego pobierania tokenów dostępowych (access token) z lokalnego serwisu testowego (np. Spring Boot), który komunikuje się z Keycloakiem. Dzięki umieszczeniu w module <code>core</code> może być współdzielona przez wszystkie podprojekty.</p>
+
+<h2>📦 Architektura</h2>
+<ul>
+<li><strong>TokenFetcher</strong> – logika pobierania tokena (HTTP call)</li>
+<li><strong>AccessTokenConfig</strong> – interfejs OWNER do ładowania zmiennych z <code>.properties</code></li>
+<li><strong>config-access.properties</strong> – plik z danymi autoryzacyjnymi (client id, secret, url)</li>
+</ul>
+
+<h2>📁 core/auth/AccessTokenConfig.java</h2>
+<pre><code>package com.example.core.auth;
+
+import org.aeonbits.owner.Config;
+import org.aeonbits.owner.LoadPolicy;
+import org.aeonbits.owner.LoadType;
+import org.aeonbits.owner.Config.Sources;
+
+@LoadPolicy(LoadType.MERGE)
+@Sources({
+    "classpath:config-access.properties",
+    "classpath:config-access-${env}.properties"
+})
+public interface AccessTokenConfig extends Config {
+
+    @Key("auth.token.url")
+    String tokenUrl();
+
+    @Key("auth.client.id")
+    String clientId();
+
+    @Key("auth.client.secret")
+    String clientSecret();
+}
+</code></pre>
+
+<h2>📁 core/auth/TokenFetcher.java</h2>
+<pre><code>package com.example.core.auth;
+
+import org.json.JSONObject;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+import java.time.Duration;
+
+public class TokenFetcher {
+
+    private final AccessTokenConfig config;
+
+    public TokenFetcher(AccessTokenConfig config) {
+        this.config = config;
+    }
+
+    public String fetchToken() {
+        try {
+            String body = new JSONObject()
+                .put("client_id", config.clientId())
+                .put("client_secret", config.clientSecret())
+                .toString();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(config.tokenUrl()))
+                .timeout(Duration.ofSeconds(5))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString());
+
+            JSONObject json = new JSONObject(response.body());
+            return "Bearer " + json.getString("access_token");
+        } catch (Exception e) {
+            throw new RuntimeException("Token fetch failed", e);
+        }
+    }
+}
+</code></pre>
+
+<h2>🧪 Przykład użycia w projekcie</h2>
+<pre><code>import com.example.core.auth.TokenFetcher;
+import com.example.core.auth.AccessTokenConfig;
+import com.example.core.config.GenericConfigManager;
+
+public class AuthSupport {
+
+    private static final String token;
+
+    static {
+        AccessTokenConfig config = GenericConfigManager.load(AccessTokenConfig.class);
+        token = new TokenFetcher(config).fetchToken();
+    }
+
+    public static String getToken() {
+        return token;
+    }
+}
+</code></pre>
+
+<h2>🧾 config-access.properties</h2>
+<pre><code>auth.token.url=http://localhost:8080/token
+auth.client.id=test-client
+auth.client.secret=test-secret
+</code></pre>
+
+<h2>💡 Dobre praktyki</h2>
+<ul>
+<li>Nie ustawiaj <code>env</code> w core – konfiguracja środowiska należy do podprojektów.</li>
+<li>Używaj <code>@LoadPolicy(LoadType.MERGE)</code>, aby wspierać dziedziczenie konfiguracji.</li>
+<li>Nie loguj tokenów w logach ani w raportach.</li>
+</ul>
+
+<h2>🧪 Diagnostyka</h2>
+<table>
+<tr><th>Problem</th><th>Możliwa przyczyna</th></tr>
+<tr><td>NullPointer na tokenie</td><td>Błędny URL / brak odpowiedzi z serwisu</td></tr>
+<tr><td>Token pusty</td><td>Błąd w mapowaniu JSON lub brak pola access_token</td></tr>
+<tr><td>OWNER nie ładuje</td><td>Brak pliku config-access.properties w classpath</td></tr>
+</table>
+
+</body>
+</html>

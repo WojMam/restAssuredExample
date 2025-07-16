@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Konfiguracja testów z użyciem biblioteki OWNER</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 2em; }
+        h1, h2, h3 { color: #2c3e50; }
+        code, pre { background: #f4f4f4; padding: 0.5em; display: block; overflow-x: auto; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+<h1>🧪 Konfiguracja testów z użyciem biblioteki OWNER</h1>
+<p><strong>Dokumentacja dla projektów korzystających ze wspólnego mechanizmu konfiguracji (core + podprojekty)</strong></p>
+
+<h2>📚 Cel</h2>
+<p>Wspólna konfiguracja testów automatycznych oparta na bibliotece OWNER, pozwalająca:</p>
+<ul>
+<li>zarządzać zmiennymi konfiguracyjnymi centralnie i per-projektowo,</li>
+<li>rozdzielić konfigurację wspólną i środowiskową,</li>
+<li>ładować różne konfiguracje w zależności od środowiska (dev, uat, prod),</li>
+<li>korzystać z jednego wspólnego mechanizmu ładowania w core.</li>
+</ul>
+
+<h2>📦 Struktura projektu</h2>
+<pre><code>root/
+├── core/
+│   └── src/main/java/com/example/core/config/
+│       ├── OwnerSupport.java
+│       └── GenericConfigManager.java
+├── projekt-e/
+│   ├── src/test/java/com/example/projekte/config/
+│   │   ├── TestConfig.java
+│   │   └── TestConfigManager.java
+│   └── src/test/resources/
+│       ├── config-common.properties
+│       └── config-uat.properties
+├── projekt-p/
+│   └── ...
+</code></pre>
+
+<h2>🔧 Co tworzymy?</h2>
+<table>
+<tr><th>Element</th><th>Gdzie?</th><th>Opis</th></tr>
+<tr><td>GenericConfigManager</td><td>core</td><td>Wspólna klasa do ładowania konfiguracji (bez env)</td></tr>
+<tr><td>OwnerSupport</td><td>core</td><td>Wrapper wokół ConfigFactory</td></tr>
+<tr><td>TestConfig</td><td>projekt</td><td>Interfejs z kluczami konfiguracyjnymi</td></tr>
+<tr><td>TestConfigManager</td><td>projekt</td><td>Lokalna klasa dostępu do configu + ustawienie env</td></tr>
+</table>
+
+<h2>📁 core/config/GenericConfigManager.java</h2>
+<pre><code>package com.example.core.config;
+
+import org.aeonbits.owner.Config;
+
+public class GenericConfigManager {
+    public static &lt;T extends Config&gt; T load(Class&lt;T&gt; configClass) {
+        return OwnerSupport.load(configClass);
+    }
+}
+</code></pre>
+
+<h2>📁 core/config/OwnerSupport.java</h2>
+<pre><code>package com.example.core.config;
+
+import org.aeonbits.owner.ConfigFactory;
+import org.aeonbits.owner.Config;
+
+public class OwnerSupport {
+    public static &lt;T extends Config&gt; T load(Class&lt;T&gt; configClass) {
+        return ConfigFactory.create(configClass);
+    }
+}
+</code></pre>
+
+<h2>📁 projekt-e/config/TestConfig.java</h2>
+<pre><code>package com.example.projekte.config;
+
+import org.aeonbits.owner.Config;
+import org.aeonbits.owner.Config.Sources;
+import org.aeonbits.owner.LoadPolicy;
+import org.aeonbits.owner.LoadType;
+import org.aeonbits.owner.Config.Key;
+
+@LoadPolicy(LoadType.MERGE)
+@Sources({
+    "classpath:config-common.properties",
+    "classpath:config-${env}.properties"
+})
+public interface TestConfig extends Config {
+
+    @Key("base.url")
+    String baseUrl();
+
+    @Key("auth.token")
+    String authToken();
+
+    @Key("timeout.ms")
+    int timeoutMs();
+}
+</code></pre>
+
+<h2>📁 projekt-e/config/TestConfigManager.java</h2>
+<pre><code>package com.example.projekte.config;
+
+import com.example.core.config.GenericConfigManager;
+
+public class TestConfigManager {
+
+    static {
+        if (System.getProperty("env") == null) {
+            System.setProperty("env", "dev");
+        }
+    }
+
+    private static final TestConfig CONFIG = GenericConfigManager.load(TestConfig.class);
+
+    public static TestConfig get() {
+        return CONFIG;
+    }
+}
+</code></pre>
+
+<h2>📁 Pliki .properties</h2>
+<h3>🔹 config-common.properties</h3>
+<pre><code>timeout.ms=3000
+feature.flag=true
+</code></pre>
+<h3>🔹 config-uat.properties</h3>
+<pre><code>base.url=https://uat.api.example.com
+auth.token=xyz-uat-token
+</code></pre>
+
+<h2>🚀 Użycie w testach</h2>
+<pre><code>import com.example.projekte.config.TestConfigManager;
+import static io.restassured.RestAssured.*;
+import org.junit.jupiter.api.Test;
+
+public class SampleApiTest {
+
+    @Test
+    void shouldCallHealthCheck() {
+        String url = TestConfigManager.get().baseUrl();
+        int timeout = TestConfigManager.get().timeoutMs();
+
+        given()
+            .baseUri(url)
+            .when()
+            .get("/health")
+            .then()
+            .statusCode(200);
+    }
+}
+</code></pre>
+
+<h2>🔁 Zmiana środowiska</h2>
+<h3>🔹 W kodzie (lokalne testy):</h3>
+<pre><code>System.setProperty("env", "uat");</code></pre>
+<h3>🔹 W parametrach JVM (np. w IntelliJ, Maven, CI):</h3>
+<pre><code>-Denv=uat</code></pre>
+
+<h2>✅ Dobre praktyki</h2>
+<ul>
+<li>Nigdy nie ustawiaj <code>env</code> w core – zostaw to logice projektowej.</li>
+<li>Dodaj <code>@LoadPolicy(LoadType.MERGE)</code> do interfejsu OWNER, inaczej tylko pierwszy plik zostanie użyty.</li>
+<li>Nie powielaj kluczy w plikach common i config-${env} – środowiskowy powinien tylko nadpisywać.</li>
+<li>Umieszczaj pliki .properties w <code>src/test/resources</code>.</li>
+</ul>
+
+<h2>🧪 Diagnostyka błędów</h2>
+<table>
+<tr><th>Problem</th><th>Diagnoza</th></tr>
+<tr><td>null zamiast wartości</td><td>Klucz nie istnieje w interfejsie lub <code>env</code> nie jest ustawiony</td></tr>
+<tr><td>common nie ładuje się</td><td>Brak <code>@LoadPolicy(LoadType.MERGE)</code></td></tr>
+<tr><td>${env} nie działa</td><td>Nie ustawiono <code>System.setProperty("env", "...")</code></td></tr>
+</table>
+
+<h2>🧭 Podsumowanie</h2>
+<table>
+<tr><th>Klasa</th><th>Rola</th></tr>
+<tr><td>GenericConfigManager</td><td>Neutralny loader z core, nieustawiający env</td></tr>
+<tr><td>TestConfig</td><td>Interfejs z definicją kluczy</td></tr>
+<tr><td>TestConfigManager</td><td>Adapter z env i get()</td></tr>
+<tr><td>.properties</td><td>W resources, dzielone na common i środowiskowe</td></tr>
+</table>
+
+</body>
+</html>

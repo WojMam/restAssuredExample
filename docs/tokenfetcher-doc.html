@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>TokenFetcher w core - Dokumentacja</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 2em; }
+        h1, h2, h3 { color: #2c3e50; }
+        code, pre { background: #f4f4f4; padding: 0.5em; display: block; overflow-x: auto; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+
+<h1>🔐 TokenFetcher w core – Dokumentacja</h1>
+
+<h2>📚 Cel</h2>
+<p>Mechanizm <strong>TokenFetcher</strong> służy do automatycznego pobierania tokenów dostępowych (access token) z lokalnego serwisu Spring Boot (pośredniczącego w komunikacji z Keycloakiem), w celu dołączania tokenu do testów REST.</p>
+
+<h2>🧱 Uzasadnienie techniczne</h2>
+<ul>
+  <li>Token nie jest generowany bezpośrednio z Keycloaka – korzystamy z serwisu pośredniego (np. z jar-a Spring Boota).</li>
+  <li>Wiele zespołów korzysta z tego samego serwisu – warto logikę pobierania trzymać w module <code>core</code>.</li>
+  <li>Korzystamy z biblioteki OWNER do centralnego zarządzania konfiguracją (clientId, secret, token URL).</li>
+</ul>
+
+<h2>🏗️ Wzorzec projektowy</h2>
+<p>Używamy podejścia <strong>utility class + konfiguracja poprzez interfejs OWNER</strong>, z centralnym <code>ConfigManagerem</code>, który udostępnia wszystkie konfiguracje w projekcie.</p>
+
+<h2>📦 Struktura</h2>
+<pre><code>core/
+└── src/main/java/com/example/core/auth/
+    ├── AccessTokenConfig.java
+    ├── TokenFetcher.java
+    └── AccessTokenConfigManager.java
+
+projekt-x/
+└── src/test/resources/
+    ├── config-access.properties
+    └── config-access-uat.properties
+</code></pre>
+
+<h2>📄 core/auth/AccessTokenConfig.java</h2>
+<pre><code>package com.example.core.auth;
+
+import org.aeonbits.owner.Config;
+import org.aeonbits.owner.LoadPolicy;
+import org.aeonbits.owner.LoadType;
+import org.aeonbits.owner.Config.Sources;
+
+@LoadPolicy(LoadType.MERGE)
+@Sources({
+    "classpath:config-access.properties",
+    "classpath:config-access-${env}.properties"
+})
+public interface AccessTokenConfig extends Config {
+
+    @Key("token.url")
+    String tokenUrl();
+
+    @Key("client.id")
+    String clientId();
+
+    @Key("client.secret")
+    String clientSecret();
+}
+</code></pre>
+
+<h2>📄 core/auth/TokenFetcher.java</h2>
+<pre><code>package com.example.core.auth;
+
+import org.json.JSONObject;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+import java.time.Duration;
+
+public class TokenFetcher {
+
+    public static String fetchToken(AccessTokenConfig config) {
+        try {
+            String body = new JSONObject()
+                .put("client_id", config.clientId())
+                .put("client_secret", config.clientSecret())
+                .toString();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(config.tokenUrl()))
+                .timeout(Duration.ofSeconds(5))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString());
+
+            JSONObject json = new JSONObject(response.body());
+            return "Bearer " + json.getString("access_token");
+        } catch (Exception e) {
+            throw new RuntimeException("Token fetch failed", e);
+        }
+    }
+}
+</code></pre>
+
+<h2>📄 core/auth/AccessTokenConfigManager.java</h2>
+<pre><code>package com.example.core.auth;
+
+import com.example.core.config.GenericConfigManager;
+
+public class AccessTokenConfigManager {
+
+    private static final AccessTokenConfig CONFIG = GenericConfigManager.load(AccessTokenConfig.class);
+
+    public static AccessTokenConfig get() {
+        return CONFIG;
+    }
+}
+</code></pre>
+
+<h2>🧪 Przykład użycia w teście</h2>
+<pre><code>import com.example.core.auth.TokenFetcher;
+import com.example.core.auth.AccessTokenConfigManager;
+
+public class SampleTest {
+
+    private static final String token = TokenFetcher.fetchToken(AccessTokenConfigManager.get());
+
+    @Test
+    void testWithAuth() {
+        given()
+            .header("Authorization", token)
+        .when()
+            .get("/protected")
+        .then()
+            .statusCode(200);
+    }
+}
+</code></pre>
+
+<h2>🗂️ Pliki .properties (w projekcie, nie w core!)</h2>
+
+<h3>🔹 config-access.properties</h3>
+<pre><code>timeout=5000
+</code></pre>
+
+<h3>🔹 config-access-uat.properties</h3>
+<pre><code>token.url=http://localhost:8080/token
+client.id=test-client
+client.secret=test-secret
+</code></pre>
+
+<h2>⚙️ Ustawienie środowiska</h2>
+<p>Możesz ustawić środowisko przez:</p>
+<ul>
+<li>JVM param: <code>-Denv=uat</code></li>
+<li>W kodzie: <code>System.setProperty("env", "uat");</code></li>
+</ul>
+
+<h2>🧠 Uwagi</h2>
+<ul>
+<li>Token nie powinien być logowany w raportach (np. Allure).</li>
+<li>Jeśli token ma wygasać, warto pomyśleć o mechanizmie odświeżania (nie zaimplementowano tutaj).</li>
+<li>Pliki <code>.properties</code> muszą znajdować się w <code>src/test/resources</code> projektu, który je używa.</li>
+</ul>
+
+</body>
+</html>
